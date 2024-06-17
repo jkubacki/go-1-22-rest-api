@@ -1,29 +1,43 @@
 package main
 
 import (
+	"api/middleware"
 	"fmt"
 	"net/http"
 )
 
 func main() {
-	fmt.Println("http://localhost:8080")
+	router := http.NewServeMux()
 
-	mux := http.NewServeMux()
+	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hello World!")
+	})
 
-	mux.HandleFunc("GET /comment", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("GET /comment", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "return all comments")
 	})
 
-	mux.HandleFunc("GET /comment/{id}", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("GET /comment/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		fmt.Fprintf(w, "return comment %s", id)
 	})
 
-	mux.HandleFunc("POST /comment", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("POST /comment", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "post a new comment")
 	})
 
-	if err := http.ListenAndServe("localhost:8080", mux); err != nil {
+	stack := middleware.CreateStack(
+		middleware.Logging,
+	)
+
+	server := http.Server{
+		Addr:    "localhost:8080",
+		Handler: stack(router),
+	}
+
+	fmt.Println("Server listening at http://localhost:8080")
+
+	if err := server.ListenAndServe(); err != nil {
 		fmt.Println(err.Error())
 	}
 }
